@@ -1,55 +1,60 @@
-// Simple demo client to exercise the server. Replace with your game code.
-// In your app, import socket and emit the same events (play_card, move_unit, etc.)
-// after you receive 'match_found' and get a roomId and side.
+// Basic client that connects to the server and relays events
+const logEl = document.getElementById("log");
+const statusEl = document.getElementById("status");
+
+function log(msg, payload) {
+  const pre = document.createElement("pre");
+  pre.textContent = (new Date()).toLocaleTimeString() + "  " + msg + (payload ? ("\n" + JSON.stringify(payload, null, 2)) : "");
+  logEl.prepend(pre);
+}
 
 const socket = io();
 
-const logEl = document.getElementById('log');
-function log(...args) {
-  const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
-  logEl.textContent += msg + "\n";
+socket.on("connect", () => {
+  statusEl.textContent = "Connected ✓  (" + socket.id + ")";
+  log("connected", { id: socket.id });
+});
+
+socket.on("disconnect", () => {
+  statusEl.textContent = "Disconnected ✕";
+  log("disconnected");
+});
+
+socket.on("room:player_count", ({ count }) => {
+  const text = `Players in quickplay: ${count}`;
+  document.title = `Chaotic Neutral — ${count} online`;
+  log(text);
+});
+
+// Generic relay
+socket.on("game:event", (payload) => {
+  log("game:event", payload);
+});
+
+// Named events commonly used in your project (relayed 1:1 by server)
+const knownEvents = ["move", "attack", "endTurn", "playCard", "placeWall", "usePrimary", "useSpecial", "syncState", "chat", "ping"];
+for (const evt of knownEvents) {
+  socket.on(evt, (data) => log(evt, data));
 }
 
-let myId = null;
-let roomId = null;
-let side = null;
-
-socket.on('connect', () => log('[io] connected', socket.id));
-socket.on('hello', ({ playerId }) => { myId = playerId; log('[hello]', playerId); });
-
-socket.on('match_found', (payload) => {
-  roomId = payload.roomId;
-  side = payload.side || (payload.sides && payload.sides[socket.id]);
-  log('[match_found]', payload);
-  document.getElementById('dummy-move').disabled = false;
-  document.getElementById('chatBtn').disabled = false;
-});
-
-socket.on('room_created', (payload) => {
-  log('[room_created]', payload);
-  document.getElementById('code').value = payload.code;
-});
-
-socket.on('opponent_left', (payload) => log('[opponent_left]', payload));
-
-socket.on('chat', (payload) => log('[chat]', payload));
-socket.on('move_unit', (payload) => log('[move_unit]', payload));
-socket.on('play_card', (payload) => log('[play_card]', payload));
-
-// UI
-document.getElementById('quick').onclick = () => socket.emit('join_queue');
-document.getElementById('create').onclick = () => socket.emit('create_room');
-document.getElementById('join').onclick = () => {
-  const code = document.getElementById('code').value.trim();
-  if (code) socket.emit('join_room', { code });
+// Demo buttons
+document.getElementById("btnPing").onclick = () => {
+  const payload = { t: Date.now(), from: socket.id };
+  socket.emit("ping", payload);
+  log("emit ping →", payload);
 };
-
-document.getElementById('dummy-move').onclick = () => {
-  // Example of a room-scoped gameplay event
-  socket.emit('move_unit', { unitId: 'pawn1', to: 'D4', ts: Date.now() });
+document.getElementById("btnTestMove").onclick = () => {
+  const payload = { piece: "p1_tank", to: "D4" };
+  socket.emit("move", payload);
+  log("emit move →", payload);
 };
-
-document.getElementById('chatBtn').onclick = () => {
-  const text = document.getElementById('chatText').value;
-  socket.emit('chat', { text, ts: Date.now() });
+document.getElementById("btnTestPrimary").onclick = () => {
+  const payload = { actor: "Aimbot", target: "Voodoo", amount: 5 };
+  socket.emit("usePrimary", payload);
+  log("emit usePrimary →", payload);
+};
+document.getElementById("btnTestSpecial").onclick = () => {
+  const payload = { actor: "DeathBlossom", effect: "Healing Blossom", heal: 2 };
+  socket.emit("useSpecial", payload);
+  log("emit useSpecial →", payload);
 };

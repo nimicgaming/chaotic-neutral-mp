@@ -1,32 +1,30 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Chaotic Neutral - MP MVP</title>
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; }
-      .row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-      button { padding: 8px 12px; cursor: pointer; }
-      input { padding: 8px; }
-      #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 160px; }
-    </style>
-  </head>
-  <body>
-    <h1>Chaotic Neutral — Multiplayer MVP</h1>
-    <div class="row">
-      <button id="quick">Quick Play</button>
-      <button id="create">Create Room</button>
-      <input id="code" placeholder="Enter Code" />
-      <button id="join">Join by Code</button>
-    </div>
-    <div class="row">
-      <button id="dummy-move" disabled>Send Demo Move</button>
-      <input id="chatText" placeholder="type chat" />
-      <button id="chatBtn" disabled>Send Chat</button>
-    </div>
-    <div id="log"></div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chaotic Neutral — Quickplay</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>Chaotic Neutral — Quickplay</h1>
+    <p class="hint">Anyone who opens this URL joins the same room automatically.</p>
+    <div id="status">Connecting…</div>
+
+    <section class="controls">
+      <button id="btnPing">Send Test Ping</button>
+      <button id="btnTestMove">Emit “move” Event</button>
+      <button id="btnTestPrimary">Emit “usePrimary” Event</button>
+      <button id="btnTestSpecial">Emit “useSpecial” Event</button>
+    </section>
+
+    <section class="log" id="log"></section>
+  </main>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+          integrity="sha384-Z5iCkS3qM7JY4qN2Jb7l1qjN0LaB9UflP8v2x3QyigQwL1JXbN8G4nId7vWvQ5o7"
+          crossorigin="anonymous"></script>
+  <script src="client.js"></script>
+</body>
 </html>

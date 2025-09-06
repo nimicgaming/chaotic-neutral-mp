@@ -1,42 +1,64 @@
-/**
- * Chaotic Neutral - Minimal Multiplayer MVP
- * - Express static server (./public)
- * - Socket.IO matchmaking (Quick Play + Join by Code)
- * - Room-scoped event relaying (server re-broadcasts only to room)
- *
- * Integrate by emitting the same gameplay events you already use,
- * but now they are scoped to your room instead of global.
- *
- * Run: npm i && npm run dev
- */
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const path = require('path');
-const express = require('express');
-const http = require('http');
-const cors = require('cors');
-const { Server } = require('socket.io');
-const { initMultiplayer } = require('./rooms');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
 
 const PORT = process.env.PORT || 3000;
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve all files from the project root (flat structure, no /public needed)
+app.use(express.static(__dirname));
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: true,
-    credentials: true
-  }
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Attach multiplayer (matchmaking + rooms + relays)
-initMultiplayer(io);
+// Simple quickplay: everyone joins the same room automatically
+const ROOM = "quickplay";
 
-app.get('/healthz', (_req, res) => res.json({ ok: true, ts: Date.now() }));
+io.on("connection", (socket) => {
+  console.log("⚡ client connected", socket.id);
+  socket.join(ROOM);
+
+  // Tell newcomers how many are online in the room
+  const room = io.sockets.adapter.rooms.get(ROOM);
+  const count = room ? room.size : 1;
+  io.to(ROOM).emit("room:player_count", { count });
+
+  // Generic relay for any gameplay messages
+  socket.on("game:event", (payload) => {
+    // Broadcast to everyone else in the room
+    socket.to(ROOM).emit("game:event", payload);
+  });
+
+  // Optional: named events you may already be using — they will be relayed 1:1
+  const relayEvents = [
+    "move", "attack", "endTurn", "playCard", "placeWall",
+    "usePrimary", "useSpecial", "syncState", "chat", "ping"
+  ];
+  for (const evt of relayEvents) {
+    socket.on(evt, (data) => {
+      socket.to(ROOM).emit(evt, data);
+    });
+  }
+
+  socket.on("disconnect", () => {
+    const roomNow = io.sockets.adapter.rooms.get(ROOM);
+    const newCount = roomNow ? roomNow.size : 0;
+    io.to(ROOM).emit("room:player_count", { count: newCount });
+    console.log("👋 client disconnected", socket.id);
+  });
+});
 
 server.listen(PORT, () => {
-  console.log(`[MP] Server listening on http://localhost:${PORT}`);
+  console.log(`✅ Server listening on port ${PORT}`);
 });
