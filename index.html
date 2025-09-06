@@ -4,19 +4,40 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chaotic Neutral — Quickplay</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    body { margin: 0; background: #0b0f14; color: #e6edf3; }
+    main { max-width: 880px; margin: 40px auto; padding: 24px; background: #0f1620; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+    h1 { margin: 0 0 4px; font-size: 28px; }
+    .hint { margin: 0 0 16px; color: #9aa7b3; }
+    #status { padding: 10px 12px; border-radius: 10px; background: #111a25; display: inline-block; margin-bottom: 16px; }
+    .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    button { padding: 10px 14px; border: 0; border-radius: 10px; background: #1f6feb; color: #fff; font-weight: 600; cursor: pointer; }
+    button:hover { filter: brightness(1.1); }
+    .log { background: #0b1220; border-radius: 12px; padding: 12px; min-height: 200px; max-height: 420px; overflow: auto; border: 1px solid #172033; }
+    pre { margin: 0 0 8px; white-space: pre-wrap; word-break: break-word; }
+    .roomline { margin-bottom: 10px; color: #9aa7b3; }
+    input[type=text]{ background:#0b1220; color:#e6edf3; border:1px solid #172033; border-radius:8px; padding:8px 10px; }
+    a.link { color:#8ab4ff; }
+  </style>
 </head>
 <body>
   <main>
     <h1>Chaotic Neutral — Quickplay</h1>
-    <p class="hint">Anyone who opens this URL joins the same room automatically.</p>
+    <p class="hint">This auto-joins <strong id="room">quickplay</strong>. Use <code>?room=NAME</code> in the URL to make a private room.</p>
+    <div class="roomline">Examples:
+      <code><a class="link" href="?">quickplay</a></code> ·
+      <code><a class="link" href="?room=test">?room=test</a></code> ·
+      <code><a class="link" href="?room=lobby1">?room=lobby1</a></code>
+    </div>
+
     <div id="status">Connecting…</div>
 
     <section class="controls">
       <button id="btnPing">Send Test Ping</button>
-      <button id="btnTestMove">Emit “move” Event</button>
-      <button id="btnTestPrimary">Emit “usePrimary” Event</button>
-      <button id="btnTestSpecial">Emit “useSpecial” Event</button>
+      <button id="btnMove">Emit “move”</button>
+      <button id="btnPrimary">Emit “usePrimary”</button>
+      <button id="btnSpecial">Emit “useSpecial”</button>
     </section>
 
     <section class="log" id="log"></section>

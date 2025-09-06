@@ -1,6 +1,10 @@
-// Basic client that connects to the server and relays events
+// Simple client that auto-joins "quickplay" unless a ?room=NAME is provided.
+const params = new URLSearchParams(location.search);
+const room = params.get("room") || "quickplay";
+
 const logEl = document.getElementById("log");
 const statusEl = document.getElementById("status");
+const roomEl = document.getElementById("room");
 
 function log(msg, payload) {
   const pre = document.createElement("pre");
@@ -8,11 +12,14 @@ function log(msg, payload) {
   logEl.prepend(pre);
 }
 
-const socket = io();
+// Pass room in handshake query
+const socket = io({ query: { room } });
 
 socket.on("connect", () => {
   statusEl.textContent = "Connected ✓  (" + socket.id + ")";
-  log("connected", { id: socket.id });
+  roomEl.textContent = room;
+  document.title = "Chaotic Neutral — " + room;
+  log("connected", { id: socket.id, room });
 });
 
 socket.on("disconnect", () => {
@@ -20,19 +27,15 @@ socket.on("disconnect", () => {
   log("disconnected");
 });
 
-socket.on("room:player_count", ({ count }) => {
-  const text = `Players in quickplay: ${count}`;
-  document.title = `Chaotic Neutral — ${count} online`;
-  log(text);
+socket.on("room:player_count", ({ room, count }) => {
+  log(`players in ${room}: ${count}`);
 });
 
 // Generic relay
-socket.on("game:event", (payload) => {
-  log("game:event", payload);
-});
+socket.on("game:event", (payload) => log("game:event", payload));
 
-// Named events commonly used in your project (relayed 1:1 by server)
-const knownEvents = ["move", "attack", "endTurn", "playCard", "placeWall", "usePrimary", "useSpecial", "syncState", "chat", "ping"];
+// Named events (relayed 1:1 by server)
+const knownEvents = ["move","attack","endTurn","playCard","placeWall","usePrimary","useSpecial","syncState","chat","ping"];
 for (const evt of knownEvents) {
   socket.on(evt, (data) => log(evt, data));
 }
@@ -43,17 +46,17 @@ document.getElementById("btnPing").onclick = () => {
   socket.emit("ping", payload);
   log("emit ping →", payload);
 };
-document.getElementById("btnTestMove").onclick = () => {
+document.getElementById("btnMove").onclick = () => {
   const payload = { piece: "p1_tank", to: "D4" };
   socket.emit("move", payload);
   log("emit move →", payload);
 };
-document.getElementById("btnTestPrimary").onclick = () => {
+document.getElementById("btnPrimary").onclick = () => {
   const payload = { actor: "Aimbot", target: "Voodoo", amount: 5 };
   socket.emit("usePrimary", payload);
   log("emit usePrimary →", payload);
 };
-document.getElementById("btnTestSpecial").onclick = () => {
+document.getElementById("btnSpecial").onclick = () => {
   const payload = { actor: "DeathBlossom", effect: "Healing Blossom", heal: 2 };
   socket.emit("useSpecial", payload);
   log("emit useSpecial →", payload);
